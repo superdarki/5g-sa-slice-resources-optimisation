@@ -1,0 +1,7 @@
+gymnasium
+matplotlib
+numpy
+optuna
+pandas
+torch
+tqdm
