@@ -10,7 +10,7 @@ from dqn import DQNAgent
 from environment import SlicingEnv
 
 
-def load_hparams(path):
+def load_hparams(path: str):
     """Loads a dictionary of hyperparameters from a JSON file."""
     with open(path, "r") as f:
         hparams = json.load(f)
@@ -85,20 +85,35 @@ def main():
     agent = temp_agent
     agent.s_max = loaded_s_max
 
+    if args.S > env.s_max:
+        print(
+            f"Error: Provided S={args.S} exceeds model's trained S_max={env.s_max}."
+        )
+        env.close()
+        return
+
     # --- 4. Run Inference ---
 
     # Define the state based on input parameters
     urllc_load = args.lambda_u / env.mu_u
     embb_load = args.lambda_e / env.mu_e
 
-    state = np.array([urllc_load, embb_load], dtype=np.float32)
+    state = np.array(
+        [
+            urllc_load,
+            embb_load,
+            args.S / env.s_max,
+        ],
+        dtype=np.float32,
+    )
 
     # Get the agent's decision (action)
-    action = agent.select_action(state)
+    action = np.int64(agent.select_action(state))
 
     # Set the traffic parameters in the environment for the simulation run
     env.lambda_u = args.lambda_u
     env.lambda_e = args.lambda_e
+    env.s = args.S
 
     # Run the simulation with the agent's chosen action
     _, _, _, _, info = env.step(action)
