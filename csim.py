@@ -66,6 +66,9 @@ else:
         str(c_file),
         "-lm",
         "-lpthread",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
     ]
 try:
     subprocess.run(compile_command, check=True, capture_output=True, text=True)
