@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-from typing import Any
+from typing import Any, Optional
 import numpy as np
 import pandas as pd  # For CSV export
 import matplotlib.pyplot as plt  # For heatmap export
@@ -12,6 +12,8 @@ from tqdm import tqdm
 
 from dqn import DQNAgent, DQNTrainAgent, ReplayBuffer, evaluate_agent
 from environment import SlicingEnv
+
+import rb_values as rb
 
 
 def save_hparams(hparams: dict[str, Any], path: str):
@@ -98,7 +100,7 @@ def train_agent(
 
 
 def load_or_simulate_best_g(
-    env: SlicingEnv, S_values: list[int], output_dir: str
+    env: SlicingEnv, S_values: list[Optional[int]], output_dir: str
 ) -> dict[int, np.ndarray]:
     """
     For each S in S_values, load the precomputed matrix of G_best values from CSV.
@@ -108,6 +110,8 @@ def load_or_simulate_best_g(
     best_g_matrices: dict[int, np.ndarray] = {}
 
     for S in S_values:
+        if S is None:
+            continue
         csv_path = os.path.join(output_dir, f"Simulated_G_best_S{S}.csv")
         if os.path.exists(csv_path):
             df_best = pd.read_csv(csv_path, index_col=0)  # type: ignore
@@ -152,11 +156,17 @@ def export_results(agent: DQNAgent, env: SlicingEnv, output_dir: str):
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    S_values = [273]
+    S_values = [
+        rb.NRB_TABLE[rb.SCSkHz.KHZ_30][rb.BWMHz.MHZ_40],
+        rb.NRB_TABLE[rb.SCSkHz.KHZ_30][rb.BWMHz.MHZ_80],
+        rb.NRB_TABLE[rb.SCSkHz.KHZ_30][rb.BWMHz.MHZ_100],
+    ]
 
     simulated_best = load_or_simulate_best_g(env, S_values, output_dir)
 
     for S in S_values:
+        if S is None:
+            continue
         G_matrix = np.zeros((S + 1, S + 1), dtype=int)
         Diff_matrix = np.zeros((S + 1, S + 1), dtype=int)
         best_matrix = simulated_best[S]
